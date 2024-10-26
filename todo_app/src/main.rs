@@ -1,5 +1,8 @@
 use colored::*;
-use std::io::{self, Write};
+use serde::{Deserialize, Serialize};
+use std::fs::File;
+use std::io::{self, Read, Write};
+#[derive(Serialize, Deserialize)]
 struct Task {
     description: String,
     completed: bool,
@@ -59,11 +62,52 @@ impl TodoList {
             println!("invalid task number!")
         }
     }
+
+    fn save_to_file(&self, filename: &str) {
+        let json_data = serde_json::to_string_pretty(&self.tasks).unwrap(); //understand this
+        let mut file = File::create(filename).expect("Unable to create file");
+        file.write_all(json_data.as_bytes())
+            .expect("Unable to write data");
+    }
+
+    fn load_from_file(&mut self, filename: &str) {
+        if let Ok(mut file) = File::open(filename) {
+            let mut contents = String::new();
+            file.read_to_string(&mut contents)
+                .expect("Unable to read file");
+            if let Ok(tasks) = serde_json::from_str::<Vec<Task>>(&contents) {
+                self.tasks = tasks;
+                println!("Tasks loaded from file successfully!");
+            } else {
+                println!(
+                    "{}",
+                    "Could not parse JSON. Starting with empty list.".yellow()
+                );
+            }
+        } else {
+            println!(
+                "{}",
+                "No saved tasks found. Starting with empty list.".yellow()
+            );
+        }
+    }
 }
 
 fn main() {
     let mut todo_list = TodoList::new();
+    println!(
+        "{} {} {}{}{}{} {}",
+        "WELCOME".bright_blue(),
+        "to our",
+        "T".bright_purple(),
+        "O".white(),
+        "D".bright_purple(),
+        "O".white(),
+        "LIST".bright_blue(),
+    );
+    let filename = "tasks.json";
 
+    todo_list.load_from_file(filename);
     loop {
         println!("\n1. Add Task");
         println!("2. List Tasks");
@@ -103,7 +147,8 @@ fn main() {
                 }
             }
             "4" => {
-                println!("Exiting...");
+                todo_list.save_to_file(filename);
+                println!("{}", "Tasks saved. Goodbye!".yellow());
                 break;
             }
             _ => {
