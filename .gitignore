@@ -4,3 +4,7 @@ std/Cargo.lock
 
 sender/target
 sender/Cargo.lock
+
+todo_app/target
+todo_app/Cargo.lock
+todo_app/tasks.json
